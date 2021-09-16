@@ -1,0 +1,124 @@
+---
+title: "Practica0"
+author: "Natalia Mirón Gracia"
+date: "16/9/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Ejercicio 0
+Ejercicio 0.1 - Tabla Frecuencias dado Unbiased
+Usando sample, crea vector dado honesto con 100 numero del 1 al 6
+```{r}
+# Crear dado honesto
+library(tidyverse)
+(dado_honesto = sample(1:6, 100, replace = TRUE))
+# Tabla frecuencias absolutas con table
+table(dado_honesto)
+# Tabla frecuencias relativas con table a 2sf
+signif(prop.table(table(dado_honesto)), 2)
+# Tabla frecuencias absolutas con dplyr
+tabla <- as.data.frame(dado_honesto)
+tabla %>%
+  count(dado_honesto)
+# Tabla frecuencias relativas con dplyr
+ tabla %>% 
+        count(dado_honesto) %>% 
+          mutate(dado_honesto, relFreq = prop.table(n), n=NULL)
+
+```
+
+Ejercicio 0.2 - Tabla Frecuencias dado Biased
+```{r}
+# Número cargado 6 valga el doble
+dado_cargado = sample(1:6, 100, replace = TRUE, prob = c(1/7, 1/7, 1/7, 1/7, 1/7, 2/7))
+# Tabla frecuencias absolutas con table
+table(dado_cargado)
+# Tabla frecuencias relativas con table a 2sf
+signif(prop.table(table(dado_cargado)), 2)
+# Tabla frecuencias absolutas con dplyr
+tabla <- as.data.frame(dado_cargado)
+tabla %>%
+  count(dado_cargado)
+# Tabla frecuencias relativas con dplyr
+ tabla %>% 
+        count(dado_cargado) %>% 
+          mutate(dado_cargado, relFreq = prop.table(n), n=NULL)
+  
+```
+Ejercicio 0.3 - Vectores rep y seq
+```{r}
+n <- 4
+v1 <- rep(seq(4:1), each = n)
+(v2 <-  rep(seq(1:5), times=c(1,2,3,4,5)))
+(v3 <- rep(seq(1:4), times=4))
+
+```
+Ejercicio 0.4 - Creacion tabla
+```{r}
+mpg2 <- mpg %>% 
+  filter(mpg$class == 'pickup')%>%
+    select(starts_with('c'))
+
+```
+
+Ejercicio 0.5 - Census
++ Cargar datos
+```{r}
+library(haven)
+library(ggplot2)
+census = read_dta("./data/census.dta")
+```
+
+
++ Poblaciones totales de las regiones censales?
+```{r}
+(table2 <- census %>% 
+  group_by(region) %>% 
+  summarise(total_pop = sum(pop)))
+```
+
++ Representar en diagrama de barras las poblaciones totales por region censal
+```{r}
+# Pasar variable region de tabla a fct
+table2$region <- as.factor(table2$region)
+# Barplot
+ggplot(table2, aes(x=region, y=total_pop, fill=region)) + 
+  geom_bar(stat = "identity")
+```
+
++ Ordenar los estados por poblacion, de mayor a menor
+```{r}
+census %>% 
+  select(state,pop) %>% 
+  arrange(across(pop,desc))
+```
+
++ Crear variable nueva de la tasa de divorcios/matrimonios en cada estado (densidad)
+** mutate() adds new variables and preserves existing ones
+```{r}
+census <- census %>% 
+  mutate(tasa = divorce/marriage) 
+census %>% 
+  select(state, tasa)
+
+```
+
++ Estados mas decrecidos - Tabla edad mediana decreciente y head(10)
+```{r}
+census %>% 
+  mutate(prop65p = pop65p/pop) %>% 
+  select(state, medage, prop65p) %>% 
+  arrange(across(medage,desc)) %>% 
+  head(10)
+```
+
++ Histograma con 10 intervalos de medage con curva de densidad
+```{r}
+ggplot(census, aes(x = medage)) + 
+  geom_histogram(aes(y=stat(density)), 
+                 bins = 10, fill = "darkgreen", color="white")  + 
+  geom_density(color="orange", size=1.5)
