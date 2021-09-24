@@ -1,0 +1,485 @@
+---
+title: "Tarea 2. Master en Big Data. Fundamentos Matemáticos del Análisis de Datos (FMAD)."
+author: "Natalia Mirón Gracia"
+date: 'Curso 2021-22. Última actualización: `r format(Sys.time(), "%Y-%m-%d")`'
+output: html_document
+subtitle: Probabilidad y Tidy
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Ejercicio 1. Simulando variables aleatorias discretas.
+
+**Apartado 1:** La variable aleatoria discreta $X1$ tiene esta tabla de densidad de probabilidad (es la variable que se usa como ejemplo en la Sesion ):
+$$
+\begin{array}{|c|c|c|c|c|c|c|}
+\hline
+\text{valor de }X1 & 0 & 1 & 2 & 3 \\
+\hline
+\text{Probabilidad de ese valor }P(X = x_i) & \dfrac{64}{125} &
+\dfrac{48}{125}& \dfrac{12}{125} & \dfrac{1}{125}\rule{0mm}{6mm} \\[3mm]
+\hline
+\end{array}
+$$
+Calcula la media y la varianza teÃ³ricas de esta variable.
+
+```{r}
+# Representando tabla en vectores
+x1 = c(0, 1, 2, 3)
+p1 = c(64/125, 48/125, 12/125, 1/125)
+
+# Función de E(X) = x_estimada
+c = 0
+E <- function(x, p){ 
+  for(i in 1:length(x)){
+     c = c + x[i]*p[i] 
+  }
+  (return(c))
+}
+
+# Cálculo de la media y la varianza teóricas
+media1 <- E(x1,p1)
+varianza1 <-  E(x1^2, p1) - (E(x1,p1))^2 
+
+```
+
+Distribucion x1
+```{r}
+# Distribucion x1
+library(tidyverse)
+library(ggplot2)
+data <- data.frame(x1, p1)
+ggplot(data, aes(x=x1, y=p1, fill = x1)) + 
+  geom_bar(stat = "identity")
+```
+
+ Viendo la grafica de frecuencia de encima, se puede estimar que la media estara en torno a 0 y 1.
+
+**Apartado 2:**  Combina `sample` con `replicate` para simular cien mil muestras de tamaÃ±o 10 de esta variable $X1$. Estudia la distribuciÃ³n de las medias muestrales como hemos hecho en ejemplos previos, ilustrando con grÃ¡ficas la distribuciÃ³n de esas medias muestrales. Cambia despuÃ©s el tamaÃ±o de la muestra a 30 y repite el anÃ¡lisis. 
+
+Distribucion de medias muestrales, n=10
+```{r}
+# Medias Muestrales cuando n=10
+library(MASS)
+k = 100000
+# replicate repite k veces los comandos entre llaves y guarda el resultado
+# del Ãºltimo comando en el vector mediasMuestrales
+mediasMuestrales = replicate(k, { 
+  muestra = sample(0:3, size = 10, replace = TRUE, prob = c(64, 48, 12, 1))
+  mean(muestra)
+})
+head(mediasMuestrales, 10)
+```
+
+Crear el histogrma para n=10
+```{r}
+# Historgrama y distribucion de densidad
+mediasMuestrales_df <- as.data.frame(mediasMuestrales)
+library(ggplot2)
+ggplot(mediasMuestrales_df, aes(x=mediasMuestrales)) + geom_histogram(binwidth=0.1, aes(y = ..density.., fill=..count..), colour=1) +
+  geom_vline(aes(xintercept = mean(mediasMuestrales)), colour = "lightblue", size = 1) +
+  geom_vline(aes(xintercept = media1), linetype = "dashed", colour = "black", size = 1) +
+  geom_density(adjust=3)
+
+```
+
+Distribucion de medias muestrales, n=30
+```{r}
+# Medias Muestrales cuando n=10
+library(MASS)
+k = 100000
+# replicate repite k veces los comandos entre llaves y guarda el resultado
+# del Ãºltimo comando en el vector mediasMuestrales
+mediasMuestrales2 = replicate(k, { 
+  muestra2 = sample(0:3, size = 30, replace = TRUE, prob = c(64, 48, 12, 1))
+  mean(muestra2)
+})
+
+head(mediasMuestrales2, 10)
+```
+
+Crear el histogrma para n=30
+```{r}
+# Historgrama
+mediasMuestrales2_df <- as.data.frame(mediasMuestrales2)
+library(ggplot2)
+ggplot(mediasMuestrales2_df, aes(x=mediasMuestrales2)) + geom_histogram(binwidth=0.1,aes(y = ..density.., fill=..count..),
+                 colour = 1) +
+  geom_vline(aes(xintercept = mean(mediasMuestrales2)), colour = "lightblue", size = 1) +
+  geom_vline(aes(xintercept = media1), linetype = "dashed", colour = "black", size = 1) +
+  geom_density(adjust = 3)
+
+```
+
+Comparar cuando n=10 y cuando n=30
+
+```{r}
+# Sacar la media y la desviacion tipica de las medias muestrales
+media10 = mean(mediasMuestrales)
+media30 = mean(mediasMuestrales2)
+sd10 = sd(mediasMuestrales)
+sd30= sd(mediasMuestrales2)
+# Generar tabla para mostrar datos
+Medias = c(media1, media10, media30)
+Desviaciones = c(sqrt(varianza1), sd10, sd30)
+(tabla = data.frame(cbind(Medias, Desviaciones), row.names = c("Media Real", "Media muestral n=10", "Media muestral n=30")))
+
+```
+
+Se puede concluir que ambas muestras son buenas estimaciones. Con un mayor numero de muestras (mayor n) la variacion de datos disminuye.
+
+**Apartado 3:** La variable aleatoria discreta $X2$ tiene esta tabla de densidad de probabilidad:
+$$
+\begin{array}{|c|c|c|c|c|c|}
+\hline
+\text{valor de }X2 & 0 & 1 & 2 \\
+\hline
+\text{Probabilidad de ese valor }P(X = x_i) & \dfrac{1}{2} &
+\dfrac{1}{4}&  \dfrac{1}{4}\rule{0mm}{6mm} \\[3mm]
+\hline
+\end{array}
+$$
+
+Suponemos que $X1$ y $X2$ son independientes. Â¿QuÃ© valores puede tomar la suma $X1 + X2$? Â¿CuÃ¡l es su tabla de probabilidad?
+
+```{r}
+# Hay 12 combinaciones distintas: 0+0, 0+1, 0+2, ... , 2+2, 2+3
+x2 = c(0, 1, 2)
+p2 = c(1/2, 1/4, 1/4)
+
+# Para dar 0 solo es haciendo x1=0 y x2=0
+# Para dar 1 es x1=1 y x2=0 o x1=0 y x2=1
+p12 = c()
+p12[1] = p1[1] * p2[1] 
+p12[2] = (p1[1] * p2[2]) + (p1[2] * p2[1])
+p12[3] = (p1[1] * p2[3]) + (p1[3] * p2[1])  + (p1[2] * p2[2])
+p12[4] = (p1[2] * p2[3]) + (p1[3] * p2[2])  + (p1[4] * p2[1])
+p12[5] = (p1[3] * p2[3]) + (p1[4] * p2[2])
+p12[6] = p1[4] * p2[3]
+
+# Comprobación que la nueva distribucion da suma de prob = 1
+#sum(p1(1)*p2(1)+ p1*p2 + p1*p3 + p2*p1 + p2*p2 + p2*p3 + p3*p1 + p3*p2 + p3*p3 + p4*p1 + p4*p2 + p4*p3) # deberia dar 1
+
+x12 = c(0,1,2,3,4,5)
+
+datos<-matrix(signif(c(0, 1, 2, 3, 4, 5, p12),4), ncol=6, byrow=T)
+dimnames(datos)<-list(c("valor de x1 + x2","Probabilidad de ese valor P(X = xi)"))
+
+```
+
+
+**Apartado 4:** Calcula la media teÃ³rica de la suma $X_1 + X_2$. DespuÃ©s usa `sample` y `replicate` para simular cien mil *valores* de esta variable suma. Calcula la media de esos valores. *Advertencia:* no es el mismo tipo de anÃ¡lisis que hemos hecho en el segundo apartado. 
+
+```{r}
+# La media de x1 + x2 = E(X1+X2)=E(X1)+E(X2)
+
+SumaMedias <-  E(x1,p1) + E(x2, p2)
+
+MediaSuma <-  E(x12, p12)
+
+# Dan el mismo resultado 
+(tabla2 = data.frame(cbind(SumaMedias, MediaSuma)))
+
+```
+Se puede ver que la media de la suma es equivalente a la suma de las medias, donde la media es eqeuivalente a 1.35.
+
+
+# ##########
+# Ejercicio 2. Datos limpios
+*Enunciado*    
+
++ Este fichero contiene las notas de los alumnos de una clase, que hicieron dos tests cada semana durante cinco semanas. La tabla de datos no cumple los principios de *tidy data* que hemos visto en clase. Tu tarea en este ejercicio es explicar por quÃ© no se cumplen y obtener una tabla de datos limpios con la misma informaciÃ³n usando *tidyR*.  
+**IndicaciÃ³n:** lee la ayuda de la funciÃ³n `separate` de *tidyR*.   
+
+Descarga el fichero de este enlace  
+
+[https://gist.githubusercontent.com/fernandosansegundo/471b4887737cfcec7e9cf28631f2e21e/raw/b3944599d02df494f5903740db5acac9da35bc6f/testResults.csv](https://gist.githubusercontent.com/fernandosansegundo/471b4887737cfcec7e9cf28631f2e21e/raw/b3944599d02df494f5903740db5acac9da35bc6f/testResults.csv) 
+
+Cargamos el fichero a "notas"
+```{r}
+library(tidyverse)
+# Leer fichero
+notas = read_csv("./data/testResults.csv")
+head(notas)
+```
+
+Como se ha explicado en clase, las columnas representan las variables y las filas las observaciones.
+Para poder leer la tabla correctamente, debe de haber una observacion en cada fila.
+Este conjunto de datos no cumple los principios de Tidy Data. Debajo se van a enuumerar los problemas que hay y los cambios que se van a ejecutar:
+
+  + Se combinan dos vaariables en una. Se va a separar gender_age a dos columnas: gender y age
+  
+  + Hay 5 columnas (una para cada semana) en lugar de tener una variable numerica "weeks". Se va a generar una variable numerica nueva llamada "weeks" que tenga valores de 1 a 5
+
+Se usara tidyR, usando pivot-longer (para weeks) y separate (para la columna gender_age)
+
+El primer cambio, separar la columna gender_age en 2.
+Se va a generar una columna para la edad y una segunda para el genero
+```{r}
+# Separar en dos columnas
+library(tidyr)
+notas <- separate(notas, col="gender_age", into = c("Gender", "Age"),  sep = "_", remove = TRUE) %>% 
+mutate(Age, Age = as.numeric(Age)) %>%  # Pasar age a numerico
+mutate(Gender, Gender = as.factor(Gender))  # Pasar gender a factor
+
+```
+
+El segundo cambio sera crear variable de semanas (en ingles weeks).
+Se usara pivot_longer para alargar la tabla, juntando las 5 columnas de cada semana a una
+```{r}
+library(tidyverse)
+notasTidyR <- pivot_longer(notas, c("week1", "week2", "week3", "week4", "week5"), names_to = "weeks") %>% 
+separate(weeks,c("auxweek","weeks"), sep = 4) %>% 
+mutate(weeks, weeks = as.numeric(weeks))
+
+notasLimpias <- notasTidyR %>%
+  dplyr::select(-auxweek) # Eliminar la columna auxililar usada para separar week y el numero
+
+head(notasLimpias)
+
+```
+Se ha hecho un ultimo cambio: al hacer el pivot_longer la columna "weeks" devolvia el numero de semanas como el nombre anterior de la variable
+Se ha cambiado para que en vez de devolver "week1" se devuelve unicamente el numero 1
+Esta columna tambien se ha convertido a type numeric (int)
+
+Los datos de la tabla ya estan limpios y listos para usar.
+
+# Ejercicio 3. Lectura de R4DS.
+
+Contnuando con nuestra *lectura conjunta* de este libro, si revisas el Ã­ndice verÃ¡s que hemos cubierto (holgadamente en algÃºn caso) el contenido de los CapÃ­tulos 6, 8, 9, 10 y 11. Todos esos CapÃ­tulos son relativamente ligeros.  Por eso esta semana conviene detenerse un poco en la lectura de los CapÃ­tulos 7 y 12, que son los mÃ¡s densos en informaciÃ³n. Y como motivaciÃ³n os proponemos un par de ejercicios, uno por cada uno de esos capÃ­tulos. 
+
+# 3.1. Ejercicio 2 de la Seccion 7.5.1.1 de R4DS
+(https://r4ds.had.co.nz/exploratory-data-analysis.html#exercises-17). Las ideas de esa secciÃ³n son importantes para nuestro trabajo de las prÃ³ximas sesiones.
+
+*Enunciado*
+What variable in the diamonds dataset is most important for predicting the price of a diamond? How is that variable correlated with cut? Why does the combination of those two relationships lead to lower quality diamonds being more expensive?
+*diamonds es un dataset de R
+
+Visulaizar los datos
+```{r}
+# Visualizar diamonds
+library(ggplot2)
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut))
+
+head(diamonds)
+
+```
+
+La tabla muestra informacion de diamantes: corte, color, claridad, tabla, profundidad, quilates, dimensiones y precio.
+Como ejemplo, se muestra la frecuencia de la variable corte con el precio. Se aprecian 5 categorias, siendo la ideal la mas frecuente.
+
+Se estudiara cada variable con la ayuda de boxplots, comparando los quilates con cada variable. Para comparaciones cuantitativas se estudiaran diagramas de dispersion. Para comparaciones con variables discretas se estudiaran boxplots.
+
++ Estudio 1: Precio y Quilates (Carat)
+
+```{r}
+ggplot(diamonds, aes(x = carat, y = price)) +
+  geom_point(colour = "lightblue")
+
+```
+
+Se aprecia correlacion positiva, al aumentar el numero de quilates, tambien lo hace el precio 
+
+Se va a calcular ahora el valor de la correlacion entre estos dos valores
+
+```{r}
+# Correlacion de quilates y precio
+res <- signif(cor(diamonds$carat, diamonds$price),4)
+show(res)
+
+```
+
+Se puede apreciar una correlacion de 0.92 (siento 1 positivo correlacion perfecta) entre los quilates y el precio, siendo este un factor importante para determinar le precio.
+Se estudiaran las demas variables contra el precio.
+
++ Estudio 2. Precio y Profundidad (Depth) 
+
+```{r}
+ggplot(diamonds, aes(x = depth, y = price)) +
+  geom_point(colour = "green")
+
+# Correlacion entre las dos variables
+res2 <- signif(cor(diamonds$depth, diamonds$price), 4)
+show(res2)
+
+```
+No existe correlacion entre la profundidad y precio, con un valor de correlacion de -0.01 (al borde de la no correlacion perfecta)
+
++ Estudio 3. Precio y Table
+```{r}
+ggplot(diamonds, aes(x = table, y = price)) +
+  geom_point(colour = "red")
+
+# Correlacion entre las dos variables
+res3 <- signif(cor(diamonds$table, diamonds$price), 4)
+show(res3)
+
+```
+Existe mayor correlacion entre table y precio que entre depth y table, aun asi la correlacion es de 0.13
+
++ Estudio 4. Precio y Corte (Cut)
+
+Como se ha explicado antes, las variables categoricas no pueden ser representadas con un diagrama de dispersion, seran representadas por boxplots
+Existe mucha dispersion de resultados en las 5 categorias, y poca variacion entre ellas. La correlacion de precio y corte es baja.
+```{r}
+ggplot(diamonds, aes(x = cut, y = price)) +
+  geom_boxplot()
+
+```
+
++ Estudio 5. Precio y Color
+
+Existe mayor correlacion entre precio y color que en el caso anterior, sin embargo la dispersion de resultados es elevada.
+Cuanto "peor" es el color (mas a la derecha) existe mas dispersion de precios.
+```{r}
+ggplot(diamonds, aes(x = color, y = price)) +
+  geom_boxplot()
+
+```
+
++ Estudio 6. Precio y Transparencia (Clarity)
+
+Como en los casos anteriores, al haber mucha dispersion de datos, la correlacion entre estas dos variables es escasa.   
+```{r}
+ggplot(diamonds, aes(x = clarity, y = price)) +
+  geom_boxplot()
+
+```
+
+
+Se concluye que la variable que es mas importante para determinar el precio de los diamantes es la variable Carat (quilates).
+
+Relacion de quilates y corte (Carat y Cut)
+Se estudiara con un boxplot al haber una variable discreta   
+```{r}
+ggplot(diamonds, aes(x = cut, y = carat)) +
+  geom_boxplot()
+
+```
+
+En los boxplots se aprecia como hay una relacion inversa entre la calidad del corte y el numero de quilates.
+El precio mediano maximo es para la categoria "Fair", considerada la peor. Por lo tanto, se sostiene lo explicado en el enunciado. A menor calidad (peor corte) el precio es mayor. 
+
+
+# 3.2. Ejercicio 4 de la Seccion 12.6.1 de R4DS
+(https://r4ds.had.co.nz/tidy-data.html#exercises-27). Â¡Aprovecha el cÃ³digo previo de esa secciÃ³n para trabajar con datos limpios!
+
+For each country, year, and sex compute the total number of cases of TB. Make an informative visualisation of the data.
+
+Cargar el dataset de who 
+
+```{r}
+data(who)
+
+```
+
+
+Como en el ejercicio anterior, se usara pivot_longer para limpiar la tabla y pasar a tidy data:
+Hay 3 cambios:
+
++ Alargar la tabla, pasando las variables new_sp_m en formato longitudinal, acabando con una sola columna: key
+
++ Separar la columna key  
+
++ Separar la columna sexage en 2: sex y age
+
+```{r}
+library(tidyverse)
+
+who1=who %>%
+  pivot_longer(
+    cols = new_sp_m014:newrel_f65, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  ) %>% 
+  mutate(
+    key = stringr::str_replace(key, "newrel", "new_rel")
+  ) %>%
+  separate(key, c("new", "var", "sexage")) %>% 
+  dplyr::select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+
+```
+
+La tabla ya esta limpia, se pueden estudiar los datos en graficos
+
+```{r, message=FALSE}
+who1 %>%
+  group_by(country, year, sex) %>%
+  summarise(cases = sum(cases)) %>%
+  unite(country_sex, country, sex, remove = FALSE) %>%
+  ggplot(aes(x = year, y = cases, group = country_sex, colour = sex)) +
+  geom_line()
+
+```
+
+Estudiando el grafico anterior, se puede apreciar que antes del 1995, el numero de casos era muy bajo.
+Se aprecia un aumento en el numero de casos a partir del 1995
+Se procede a comparar los casos antes y despues de 1995
+
+```{r, message=FALSE}
+who1 %>%
+  group_by(country, year, sex) %>%
+  filter(year < 1995) %>%
+  summarise(cases = sum(cases)) %>%
+  unite(country_sex, country, sex, remove = FALSE) %>%
+  ggplot(aes(x = year, y = cases, group = country_sex, colour = sex)) +
+  geom_line()
+
+```
+
+Antes de 1995, el maximo alcanza 600 en un solo pais. Estos datos, por lo tanto, no son interesantes.
+Ahora, se filtrara para sacar los casos despues de 1995
+
+```{r}
+library(ggplot2)
+
+who1 %>%
+  group_by(country, year, sex) %>%
+  filter(year > 1995) %>%
+  summarise(cases = sum(cases)) %>%
+  unite(country_sex, country, sex, remove = FALSE) %>%
+  ggplot(aes(x = year, y = cases, group = country_sex, colour = sex)) +
+  geom_line()
+
+```
+
+En esta grafica no se distinguen los paises y no se pueden sacar conclusiones.
+Se sacara la grafica de los paises mas significativos (aquellos que tengan el numero de casos por encima a 2 veces el numero de casos medio)
+
+```{r}
+# Creamos una tabla con los países que tienen un nº de casos mayor a la media
+tablaPaises <- who1 %>%
+          group_by(country) %>%
+          summarise(cases = sum(cases)) %>% 
+          arrange(cases) %>% 
+          filter(cases > 2*mean(cases))
+  who1 %>%
+  group_by(country, year, sex) %>%
+  filter(year>1995 & country %in% tablaPaises$country) %>% 
+  summarise(cases = sum(cases)) %>%
+  ggplot(aes(x = year, y = cases, group = sex, colour = sex)) +
+  geom_line()+
+  facet_wrap(~country) +
+  theme(axis.text.x = element_text(size= rel(0.6)))
+  
+```
+
+De estas graficas se pueden sacar varias conclusiones
+
+ + La enfermedad de tuberculosis aumento significativamente a partir del 1995   
+ 
+ + De los 19 paises con un numero de casos 2 veces por encima de la media 11 son paises asiaticos y 7 africanos   
+ 
+ + El pais con mayor numero de casos es China   
+ 
+ + La enfermedad afecta en mayor porcentaje a hombres   
+ 
+ + El anyo con mayor numero de casos fue 2007  
+ 
+----------------
+FIN DE LA TAREA 2   
+NATALIA MIRON
